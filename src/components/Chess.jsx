@@ -24,21 +24,22 @@ const Chess = () => {
       }
     } else {
       setIsThinking(true);
-      const move = await onDrop(moveFrom, square);
-      setIsThinking(false);
-      if (move) {
-        setMoveFrom('');
-        setPossibleMoves([]);
-      } else {
-        const hasMoves = getMoveOptions(square).length > 0;
-        if (hasMoves) {
-          setMoveFrom(square);
-          setPossibleMoves(getMoveOptions(square));
-        } else {
+      onDrop(moveFrom, square).then((move) => {
+        setIsThinking(false);
+        if (move) {
           setMoveFrom('');
           setPossibleMoves([]);
+        } else {
+          const hasMoves = getMoveOptions(square).length > 0;
+          if (hasMoves) {
+            setMoveFrom(square);
+            setPossibleMoves(getMoveOptions(square));
+          } else {
+            setMoveFrom('');
+            setPossibleMoves([]);
+          }
         }
-      }
+      });
     }
   }, [game, moveFrom, onDrop, setMoveFrom, setPossibleMoves]);
 
