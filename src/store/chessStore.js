@@ -30,10 +30,10 @@ const useChessStore = create((set, get) => ({
     }
   },
 
-  onDrop: (sourceSquare, targetSquare) => {
+  onDrop: async (sourceSquare, targetSquare) => {
     const move = get().makeMove(sourceSquare, targetSquare);
     if (move) {
-      setTimeout(makeAIMove, 300);
+      await makeAIMove();
       return true;
     }
     return false;
@@ -64,16 +64,31 @@ const getGameStatus = (game) => {
   return game.inCheck() ? 'Check!' : '';
 };
 
-const makeAIMove = () => {
+const makeAIMove = async () => {
   const { game, makeMove } = useChessStore.getState();
   if (game.isGameOver() || game.turn() !== 'b') return;
 
-  const moves = game.moves();
-  const move = moves[Math.floor(Math.random() * moves.length)];
-  const [from, to] = move.match(/[a-h][1-8]/g) || [];
-  
-  if (from && to) {
-    makeMove(from, to);
+  try {
+    const response = await fetch(`https://lichess.org/api/cloud-eval?fen=${encodeURIComponent(game.fen())}`);
+    const data = await response.json();
+
+    if (data.pvs && data.pvs.length > 0) {
+      const bestMove = data.pvs[0].moves.split(' ')[0];
+      const from = bestMove.slice(0, 2);
+      const to = bestMove.slice(2, 4);
+      makeMove(from, to);
+    } else {
+      // Fallback to random move if API doesn't return a move
+      const moves = game.moves({ verbose: true });
+      const move = moves[Math.floor(Math.random() * moves.length)];
+      makeMove(move.from, move.to);
+    }
+  } catch (error) {
+    console.error('Error fetching AI move:', error);
+    // Fallback to random move on error
+    const moves = game.moves({ verbose: true });
+    const move = moves[Math.floor(Math.random() * moves.length)];
+    makeMove(move.from, move.to);
   }
 };
 

@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import useChessStore from '../store/chessStore';
 import { Button } from '@/components/ui/button';
 
 const Chess = () => {
   const { game, status, turn, moveFrom, possibleMoves, onDrop, setMoveFrom, setPossibleMoves, resetGame } = useChessStore();
+  const [isThinking, setIsThinking] = useState(false);
 
   const onSquareClick = useCallback((square) => {
     function getMoveOptions(square) {
@@ -22,7 +23,9 @@ const Chess = () => {
         setPossibleMoves(getMoveOptions(square));
       }
     } else {
-      const move = onDrop(moveFrom, square);
+      setIsThinking(true);
+      const move = await onDrop(moveFrom, square);
+      setIsThinking(false);
       if (move) {
         setMoveFrom('');
         setPossibleMoves([]);
@@ -60,7 +63,9 @@ const Chess = () => {
           />
         </div>
         <div className="text-center mb-4">
-          <p className="text-xl font-semibold">{status || `Current turn: ${turn === 'w' ? 'White' : 'Black'}`}</p>
+          <p className="text-xl font-semibold">
+            {isThinking ? 'AI is thinking...' : (status || `Current turn: ${turn === 'w' ? 'White' : 'Black'}`)}
+          </p>
         </div>
         <div className="flex justify-center">
           <Button onClick={resetGame}>Reset Game</Button>
